@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  java-openfilegdb —— 纯 Java 实现的 Esri File Geodatabase (.gdb) 读写库。
+
+  本工程是 GDAL `ogr/ogrsf_frmts/openfilegdb/` C++ 驱动的一次**纯 Java 重构**:
+  不链接 GDAL、不使用 JNI/JNA、不依赖 Esri FileGDB SDK,全部格式解析由
+  java.nio.ByteBuffer 按字节完成。
+
+  授权:GNU General Public License v2+ —— 与 GDAL 上游保持一致。
+  GDAL 为 X/MIT 许可,MIT 允许以任意许可再分发,此处沿用 GPL 以匹配
+  派生产物的原始授权。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.gdal</groupId>
+  <artifactId>java-openfilegdb</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>java-openfilegdb</name>
+  <description>纯 Java 重构的 GDAL OpenFileGDB 驱动:Esri FileGDB(.gdb)矢量数据读写</description>
+  <url>https://gdal.org/drivers/vector/openfilegdb.html</url>
+
+  <licenses>
+    <license>
+      <name>GNU General Public License v2.0 or later</name>
+      <url>https://www.gnu.org/licenses/old-licenses/gpl-2.0.html</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <!-- 目标运行环境:Java 8(与 ArcGIS 10.x 时代的企业环境保持一致,
+         GDAL OpenFileGDB 驱动本身也是 C++11 级别,不需要更高的语言特性)。 -->
+    <maven.compiler.source>8</maven.compiler.source>
+    <maven.compiler.target>8</maven.compiler.target>
+    <slf4j.version>2.0.13</slf4j.version>
+    <junit.version>5.10.2</junit.version>
+    <!-- SQL 引擎:Apache Calcite。选它的理由见 README §7。
+         1.38.0 是仍支持 JDK 8 的版本(Calcite 官方的 JDK 下界到 1.38 为止仍是 8)。
+         注意:Calcite 会用 Janino 在运行时生成 Java 字节码 —— Janino 本身是纯 Java
+         实现的编译器,不涉及 JNI,所以不破坏本工程的"纯 Java"硬约束。 -->
+    <calcite.version>1.38.0</calcite.version>
+  </properties>
+
+  <dependencies>
+    <!-- 日志门面:仅依赖 API,具体实现由使用方决定 -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.calcite</groupId>
+      <artifactId>calcite-core</artifactId>
+      <version>${calcite.version}</version>
+    </dependency>
+
+    <!-- 测试:JUnit 5 + 简单日志实现(仅测试作用域) -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>${slf4j.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+        <configuration>
+          <!-- Java 8:使用 source/target(不能用 release,release 需 JDK 9+ 编译器配合
+               且会拒绝 -Xlint:this-escape 这类高版本 lint key)。 -->
+          <source>8</source>
+          <target>8</target>
+          <compilerArgs>
+            <arg>-Xlint:all,-serial</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>
